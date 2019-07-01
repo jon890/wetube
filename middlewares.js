@@ -1,6 +1,12 @@
+import multer from "multer";
 import routes from "./routes";
 
-export const localsMiddleWare = (req, res, next) => {
+const multerVideo = multer({ dest: "uploads/videos/" });
+// "/uploads/videos" 주의 -> 내 컴퓨터의 root 폴더 ex) c:/uploads/videos에 생성된다.
+// "uploads/videos" 로 생성하자!
+
+
+export const localsMiddleware = (req, res, next) => {
     res.locals.siteName = 'WeTube';
     res.locals.routes = routes;
 
@@ -13,3 +19,5 @@ export const localsMiddleWare = (req, res, next) => {
 
     next();
 };
+
+export const uploadVideo = multerVideo.single("videoFile");

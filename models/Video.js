@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { Model } from "mongoose";
 
 const VideoSchema = new mongoose.Schema({
     fileUrl: {

@@ -1,36 +1,101 @@
 import routes from "../routes";
+import Video from "../models/Video";
 
-export const home = (req, res) => 
-    res.render("home", { pageTitle: 'Home' , videos }
-);
-
-export const search = (req, res) => {
-    // console.log(req.query);
-    // const searchingBy = req.query.term;
-    const {
-        query: { term: searchingBy }
-    } = req;
-    res.render("search", { pageTitle: 'Search', searchingBy, videos});
+export const home = async (req, res) => {
+  // -> look for videos
+  // 비디오 정보를 읽은 후 페이지를 렌더링해야한다!
+  // 자바스크립트는 그대로 다음 줄을 실행시킴
+  try {
+    const videos = await Video.find({}).sort({ _id: -1 });
+    // console.log(videos);
+    // throw Error("test error");
+    res.render("home", { pageTitle: "Home", videos });
+  } catch (error) {
+    res.render("home", { pageTitle: "Home", videos: [] });
+  }
 };
 
-export const getUpload = (req, res) => 
-    res.render("upload", { pageTitle: 'Upload'});
+export const search = async (req, res) => {
+  // const searchingBy = req.query.term;
+  const {
+    query: { term: searchingBy }
+  } = req;
+  let videos = [];
+  try {
+    videos = await Video.find({
+      title: { $regex: searchingBy, $options: "i" }
+    });
+  } catch (error) {
+    console.log(error);
+  }
+  res.render("search", { pageTitle: "Search", searchingBy, videos });
+};
 
-export const postUpload = (req, res) => {
-    const {
-        body: { file, title, description }
-    } = req;
-    // To Do : Upload and save Video
-    res.redirect(routes.videoDetail(238907));
-}
+export const getUpload = (req, res) =>
+  res.render("upload", { pageTitle: "Upload" });
 
+export const postUpload = async (req, res) => {
+  const {
+    body: { title, description },
+    file: { path }
+  } = req;
+  const newVideo = await Video.create({
+    fileUrl: path,
+    title,
+    description
+  });
+  //console.log(newVideo);
+  res.redirect(routes.videoDetail(newVideo.id));
+};
 
+export const videoDetail = async (req, res) => {
+  //console.log(req.params.id);
+  const {
+    params: { id }
+  } = req;
+  // id가 잘못되었다면 오류가 발생한다.
+  // 에러를 try ~ catch로 잡아줘야한다.
+  try {
+    const video = await Video.findById(id);
+    res.render("videoDetail", { pageTitle: video.title, video });
+  } catch (error) {
+    res.redirect(routes.home);
+  }
+};
 
-export const videoDetail = (req, res) => 
-    res.render("videoDetail", { pageTitle: 'Video Detail'});
+export const getEditVideo = async (req, res) => {
+  const {
+    params: { id }
+  } = req;
+  try {
+    const video = await Video.findById(id);
+    res.render("editVideo", { pageTitle: `Edit ${video.title}`, video });
+  } catch (error) {
+    res.redirect(routes.home);
+  }
+};
 
-export const editVideo = (req, res) => 
-    res.render("editVideo", { pageTitle: 'Edit Video'});
+export const postEditVideo = async (req, res) => {
+  const {
+    params: { id },
+    body: { title, description }
+  } = req;
+  try {
+    await Video.findOneAndUpdate({ _id: id }, { title, description });
+    res.redirect(routes.videoDetail(id));
+  } catch (error) {
+    res.redirect(routes.home);
+  }
+};
 
-    export const deleteVideo = (req, res) => 
-    res.render("deleteVideo", { pageTitle: 'Delete Video'});
+export const deleteVideo = async (req, res) => {
+  const {
+    params: { id }
+  } = req;
+  try {
+    await Video.findOneAndDelete({ _id: id });
+  } catch (error) {
+    console.log(error);
+  }
+  res.redirect(routes.home);
+};
