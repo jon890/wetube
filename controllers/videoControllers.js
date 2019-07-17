@@ -7,8 +7,6 @@ export const home = async (req, res) => {
   // 자바스크립트는 그대로 다음 줄을 실행시킴
   try {
     const videos = await Video.find({}).sort({ _id: -1 });
-    // console.log(videos);
-    // throw Error("test error");
     res.render("home", { pageTitle: "Home", videos });
   } catch (error) {
     res.render("home", { pageTitle: "Home", videos: [] });
@@ -16,7 +14,6 @@ export const home = async (req, res) => {
 };
 
 export const search = async (req, res) => {
-  // const searchingBy = req.query.term;
   const {
     query: { term: searchingBy }
   } = req;
@@ -26,7 +23,7 @@ export const search = async (req, res) => {
       title: { $regex: searchingBy, $options: "i" }
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
   res.render("search", { pageTitle: "Search", searchingBy, videos });
 };
@@ -42,21 +39,22 @@ export const postUpload = async (req, res) => {
   const newVideo = await Video.create({
     fileUrl: path,
     title,
-    description
+    description,
+    creator: req.user.id
   });
-  //console.log(newVideo);
+  req.user.videos.push(newVideo._id);
+  req.user.save();
   res.redirect(routes.videoDetail(newVideo.id));
 };
 
 export const videoDetail = async (req, res) => {
-  //console.log(req.params.id);
   const {
     params: { id }
   } = req;
   // id가 잘못되었다면 오류가 발생한다.
   // 에러를 try ~ catch로 잡아줘야한다.
   try {
-    const video = await Video.findById(id);
+    const video = await Video.findById(id).populate("creator");
     res.render("videoDetail", { pageTitle: video.title, video });
   } catch (error) {
     res.redirect(routes.home);
@@ -69,6 +67,9 @@ export const getEditVideo = async (req, res) => {
   } = req;
   try {
     const video = await Video.findById(id);
+    if (String(video.creator) !== req.user.id) {
+      throw Error();
+    }
     res.render("editVideo", { pageTitle: `Edit ${video.title}`, video });
   } catch (error) {
     res.redirect(routes.home);
@@ -93,9 +94,13 @@ export const deleteVideo = async (req, res) => {
     params: { id }
   } = req;
   try {
+    const video = Video.findById(id);
+    if (String(video.creator) !== req.user.id) {
+      throw Error();
+    }
     await Video.findOneAndDelete({ _id: id });
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
   res.redirect(routes.home);
 };

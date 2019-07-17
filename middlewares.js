@@ -2,6 +2,7 @@ import multer from "multer";
 import routes from "./routes";
 
 const multerVideo = multer({ dest: "uploads/videos/" });
+const multerAvatar = multer({ dest: "uploads/avatars/" });
 // "/uploads/videos" 주의 -> 내 컴퓨터의 root 폴더 ex) c:/uploads/videos에 생성된다.
 // "uploads/videos" 로 생성하자!
 
@@ -29,3 +30,4 @@ export const onlyPrivate = (req, res, next) => {
 };
 
 export const uploadVideo = multerVideo.single("videoFile");
+export const uploadAvatar = multerAvatar.single("avatar");
